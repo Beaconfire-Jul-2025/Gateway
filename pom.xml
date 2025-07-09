@@ -13,6 +13,14 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>gateway</name>
 	<description>API Gateway for routing to all services</description>
+	<profiles>
+        <profile>
+            <id>dockerfile</id>
+            <build>
+                <finalName>application</finalName>
+            </build>
+        </profile>
+    </profiles>
 	<url/>
 	<licenses>
 		<license/>
