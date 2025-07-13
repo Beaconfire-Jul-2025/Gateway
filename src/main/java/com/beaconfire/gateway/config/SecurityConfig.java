@@ -1,8 +1,10 @@
 package com.beaconfire.gateway.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
@@ -17,7 +19,6 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
-import org.springframework.core.convert.converter.Converter;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Arrays;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebFluxSecurity
+@Slf4j
 public class SecurityConfig {
 
     @Bean
@@ -50,6 +52,7 @@ public class SecurityConfig {
 
     private Converter<Jwt, AbstractAuthenticationToken> jwtAuthenticationConverter() {
         return jwt -> {
+            log.info("jwt authentication: {}", jwt.getClaims());
             List<String> roles = jwt.getClaimAsStringList("roles");
             Collection<GrantedAuthority> authorities = roles != null
                     ? roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList())
