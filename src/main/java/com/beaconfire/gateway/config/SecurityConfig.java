@@ -40,6 +40,8 @@ public class SecurityConfig {
                 .and()
                 .authorizeExchange()
                 .pathMatchers("/actuator/**").permitAll()
+                .pathMatchers("/swagger-ui/**", "/swagger-ui", "/swagger-ui.html").permitAll()
+                .pathMatchers("/openapi/api-docs/**", "/openapi/api-docs").permitAll()
                 .anyExchange().authenticated()
                 .and()
                 .oauth2ResourceServer()
