@@ -21,30 +21,47 @@ public class JwtHeaderRelayGatewayFilterFactory extends AbstractGatewayFilterFac
 
     @Override
     public GatewayFilter apply(Object config) {
-        return (exchange, chain) ->
-                ReactiveSecurityContextHolder.getContext()
-                        .flatMap(ctx -> {
-                            Authentication auth = ctx.getAuthentication();
-                            if (auth != null && auth.getPrincipal() instanceof Map) {
-                                Map<String, Object> claims = (Map<String, Object>) auth.getPrincipal();
+        return (exchange, chain) -> {
+            // Check if the request path is for actuator or openapi endpoints that should bypass JWT processing
+            String path = exchange.getRequest().getPath().value();
+            if (path.contains("/actuator/") || path.contains("/openapi/")) {
+                log.info("Bypassing JWT header injection for path: {}", path);
+                return chain.filter(exchange);
+            }
 
-                                String userId = String.valueOf(claims.get("sub"));
-                                String username = String.valueOf(claims.get("username"));
-                                List<String> roles = (List<String>) claims.get("roles");
+            return ReactiveSecurityContextHolder.getContext()
+                    .cast(org.springframework.security.core.context.SecurityContext.class)
+                    .flatMap(ctx -> {
+                        Authentication auth = ctx.getAuthentication();
+                        log.info("We are trying to inject headers from JWT: {}", auth);
+                        if (auth != null && auth.getPrincipal() instanceof Map) {
+                            @SuppressWarnings("unchecked")
+                            Map<String, Object> claims = (Map<String, Object>) auth.getPrincipal();
 
-                                log.info("Injecting headers: userId={}, username={}, roles={}", userId, username, roles);
+                            String userId = String.valueOf(claims.get("sub"));
+                            String username = String.valueOf(claims.get("username"));
 
-                                ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                                        .header("X-User-Id", userId)
-                                        .header("X-Username", username)
-                                        .header("X-Roles", String.join(",", roles))
-                                        .build();
+                            @SuppressWarnings("unchecked")
+                            List<String> roles = (List<String>) claims.get("roles");
 
-                                return chain.filter(exchange.mutate().request(mutatedRequest).build());
-                            } else {
-                                log.warn("Authentication object missing or invalid.");
-                                return chain.filter(exchange);
-                            }
-                        });
+                            log.info("Injecting headers: userId={}, username={}, roles={}", userId, username, roles);
+
+                            ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
+                                    .header("X-User-Id", userId)
+                                    .header("X-Username", username)
+                                    .header("X-Roles", roles != null ? String.join(",", roles) : "")
+                                    .build();
+
+                            return chain.filter(exchange.mutate().request(mutatedRequest).build());
+                        } else {
+                            log.warn("Authentication object missing or invalid.");
+                            return chain.filter(exchange);
+                        }
+                    })
+                    .onErrorResume(throwable -> {
+                        log.warn("Error processing JWT context: {}", throwable.getMessage());
+                        return chain.filter(exchange);
+                    });
+        };
     }
 }

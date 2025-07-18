@@ -32,6 +32,9 @@ import java.util.stream.Collectors;
 @Slf4j
 public class SecurityConfig {
 
+    @Value("${app.originsUrl}")
+    private String originsUrl;
+
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         return http
@@ -40,8 +43,27 @@ public class SecurityConfig {
                 .and()
                 .authorizeExchange()
                 .pathMatchers("/actuator/**").permitAll()
-                .pathMatchers("/swagger-ui/**", "/swagger-ui", "/swagger-ui.html").permitAll()
-                .pathMatchers("/openapi/api-docs/**", "/openapi/api-docs").permitAll()
+                .pathMatchers("/webjars/**").permitAll()
+                .pathMatchers("/favicon.ico").permitAll()
+                .pathMatchers(
+                        "/api/employee/openapi/**",
+                        "/api/email/openapi/**",
+                        "/api/application/openapi/**",
+                        "/api/housing/openapi/**",
+                        "/api/composite/openapi/**",
+                        "/openapi/api-docs",
+                        "/openapi/api-docs/swagger-config",
+                        "/api/employee/actuator/**",
+                        "/api/email/actuator/**",
+                        "/api/application/actuator/**",
+                        "/api/housing/actuator/**",
+                        "/api/composite/actuator/**",
+                        "/api/employee/swagger-ui/**",
+                        "/api/email/swagger-ui/**",
+                        "/api/application/swagger-ui/**",
+                        "/api/housing/swagger-ui/**",
+                        "/api/composite/swagger-ui/**"
+                ).permitAll()
                 .anyExchange().authenticated()
                 .and()
                 .oauth2ResourceServer()
@@ -67,7 +89,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Collections.singletonList("*"));
+        configuration.setAllowedOrigins(Collections.singletonList(originsUrl));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Collections.singletonList("*"));
         configuration.setAllowCredentials(true);
