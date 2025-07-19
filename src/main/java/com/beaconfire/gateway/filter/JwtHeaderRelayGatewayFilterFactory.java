@@ -24,7 +24,7 @@ public class JwtHeaderRelayGatewayFilterFactory extends AbstractGatewayFilterFac
         return (exchange, chain) -> {
             // Check if the request path is for actuator or openapi endpoints that should bypass JWT processing
             String path = exchange.getRequest().getPath().value();
-            if (path.contains("/actuator/") || path.contains("/openapi/")) {
+            if (path.contains("/actuator/") || path.contains("/openapi/") || path.contains("/swagger-ui/")) {
                 log.info("Bypassing JWT header injection for path: {}", path);
                 return chain.filter(exchange);
             }
